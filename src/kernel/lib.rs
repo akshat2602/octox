@@ -40,6 +40,8 @@ pub mod sleeplock;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod spinlock;
 #[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ticketlock;
+#[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod start;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod uart;
