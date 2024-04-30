@@ -52,6 +52,7 @@ pub enum SysCalls {
     Close = 21,
     Dup2 = 22,
     Fcntl = 23,
+    Bench = 24,
     Invalid = 0,
 }
 
@@ -102,6 +103,7 @@ impl SysCalls {
         (Fn::U(Self::close), "(fd: usize)"),               // Release open file fd.
         (Fn::I(Self::dup2), "(src: usize, dst: usize)"),   //
         (Fn::I(Self::fcntl), "(fd: usize, cmd: FcntlCmd)"), //
+        (Fn::I(Self::bench), "(benchno: i32)"),
     ];
     pub fn invalid() -> ! {
         unimplemented!()
@@ -268,6 +270,19 @@ fn fdalloc(file: File) -> Result<usize> {
         }
     }
     Err(FileDescriptorTooLarge)
+}
+
+//Kernel benchmarking system calls
+impl SysCalls {
+    pub fn bench() -> Result<usize> {
+        #[cfg(not(all(target_os = "none", feature = "kernel")))]
+        return Ok(0);
+        #[cfg(all(target_os = "none", feature = "kernel"))]
+        {
+            let argno = argraw(0);
+            Ok(argno)
+        }
+    }
 }
 
 // Process related system calls
@@ -654,6 +669,7 @@ impl SysCalls {
             21 => Self::Close,
             22 => Self::Dup2,
             23 => Self::Fcntl,
+            24 => Self::Bench,
             _ => Self::Invalid,
         }
     }
