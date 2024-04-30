@@ -279,7 +279,7 @@ impl SysCalls {
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
-            let argno = argraw(0);
+            let argno = argraw(0) * 3;
             Ok(argno)
         }
     }
