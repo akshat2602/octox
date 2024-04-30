@@ -1,7 +1,4 @@
-extern crate alloc;
-
 use crate::ticketlock::TicketLock;
-use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::hash::Hasher;
 
@@ -9,7 +6,6 @@ use core::hash::Hasher;
 struct Entry<K, V> {
     key: K,
     value: V,
-    next: Option<Box<Entry<K, V>>>,
 }
 
 // Concurrent hash map implementation.
@@ -43,14 +39,8 @@ where
 
         // Initialize the TicketLock if it's not already initialized.
         if self.buckets[index].is_none() {
-            self.buckets[index] = Some(TicketLock::new(
-                Entry {
-                    key,
-                    value,
-                    next: None,
-                },
-                "concurrent_hash_map",
-            ));
+            self.buckets[index] =
+                Some(TicketLock::new(Entry { key, value }, "concurrent_hash_map"));
         }
         // Call the lock method to acquire the lock.
         let ticket_lock = self.buckets[index].as_ref().unwrap();

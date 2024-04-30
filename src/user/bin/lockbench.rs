@@ -9,7 +9,6 @@ extern crate alloc;
 fn main() {
     let args = env::args();
     for arg in args.skip(1) {
-        println!("in here");
         let res = lockbench(arg).unwrap();
         println!("Result of bench {} is {}", arg, res);
     }

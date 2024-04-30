@@ -14,6 +14,7 @@ use crate::{
     pipe::Pipe,
     proc::*,
     riscv::PGSIZE,
+    ssht::ConcurrentHashMap,
     stat::FileType,
     trap::TICKS,
     vm::{Addr, UVAddr},
@@ -272,15 +273,18 @@ fn fdalloc(file: File) -> Result<usize> {
     Err(FileDescriptorTooLarge)
 }
 
-//Kernel benchmarking system calls
 impl SysCalls {
+    // TODO: Kernel benchmarking system calls
     pub fn bench() -> Result<usize> {
         #[cfg(not(all(target_os = "none", feature = "kernel")))]
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
-            let argno = argraw(0) * 3;
-            Ok(argno)
+            let argno = argraw(0);
+            let mut _kv = ConcurrentHashMap::new(10);
+            _kv.insert(argno, argno * 2);
+            _kv.insert(argno * 3, argno * 5);
+            Ok(_kv.get(&argno).unwrap().clone() + _kv.get(&(argno * 3)).unwrap().clone())
         }
     }
 }
