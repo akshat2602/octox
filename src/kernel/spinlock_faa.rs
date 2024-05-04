@@ -1,17 +1,14 @@
 use crate::riscv::intr_get;
 
-use super::proc::{Cpu, Cpus, IntrLock, CPUS};
+use super::proc::{Cpus, IntrLock, CPUS};
 use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut, Drop};
-use core::{
-    ptr,
-    sync::atomic::{AtomicPtr, Ordering},
-};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Debug)]
 pub struct Mutex<T> {
     name: &'static str,     // Name of lock
-    locked: AtomicPtr<Cpu>, // Is the lock held?
+    locked: AtomicUsize, // Is the lock held?
     data: UnsafeCell<T>,    // actual data
 }
 
@@ -24,7 +21,7 @@ pub struct MutexGuard<'a, T: 'a> {
 impl<T> Mutex<T> {
     pub const fn new(value: T, name: &'static str) -> Mutex<T> {
         Mutex {
-            locked: AtomicPtr::new(ptr::null_mut()),
+            locked: AtomicUsize::new(0),
             data: UnsafeCell::new(value),
             name,
         }
@@ -39,13 +36,14 @@ impl<T> Mutex<T> {
             loop {
                 if self
                     .locked
-                    .compare_exchange(
-                        ptr::null_mut(),
-                        CPUS.mycpu(),
-                        Ordering::Acquire,
-                        Ordering::Relaxed,
-                    )
-                    .is_ok()
+                    // .compare_exchange(
+                    //     ptr::null_mut(),
+                    //     CPUS.mycpu(),
+                    //     Ordering::Acquire,
+                    //     Ordering::Relaxed,
+                    // )
+                    .fetch_add(Cpus::cpu_id(), Ordering::Acquire)
+                    == 0
                 {
                     break MutexGuard {
                         mutex: self,
@@ -60,7 +58,7 @@ impl<T> Mutex<T> {
     // Check whether this cpu is holding the lock.
     // Interrupts must be off.
     unsafe fn holding(&self) -> bool {
-        self.locked.load(Ordering::Relaxed) == CPUS.mycpu()
+        self.locked.load(Ordering::Relaxed) == Cpus::cpu_id()
     }
 
     pub fn unlock(guard: MutexGuard<'_, T>) -> &'_ Mutex<T> {
@@ -76,7 +74,7 @@ impl<T> Mutex<T> {
     // where passing guards is difficult.
     pub unsafe fn force_unlock(&self) {
         assert!(self.holding(), "force unlock {}", self.name);
-        self.locked.store(ptr::null_mut(), Ordering::Release);
+        self.locked.store(0, Ordering::Release);
         (&mut *CPUS.mycpu()).unlock()
     }
 }
@@ -98,7 +96,7 @@ impl<'a, T: 'a> MutexGuard<'a, T> {
 impl<'a, T: 'a> Drop for MutexGuard<'a, T> {
     fn drop(&mut self) {
         assert!(self.holding(), "release {}", self.mutex.name);
-        self.mutex.locked.store(ptr::null_mut(), Ordering::Release);
+        self.mutex.locked.store(0, Ordering::Release);
     }
 }
 
