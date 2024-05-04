@@ -106,8 +106,8 @@ impl SysCalls {
         (Fn::U(Self::close), "(fd: usize)"),               // Release open file fd.
         (Fn::I(Self::dup2), "(src: usize, dst: usize)"),   //
         (Fn::I(Self::fcntl), "(fd: usize, cmd: FcntlCmd)"), //
-        (Fn::I(Self::createbench), "()"),
-        (Fn::I(Self::accessbench), "()"),
+        (Fn::I(Self::createbench), "(entry: i32)"),
+        (Fn::I(Self::accessbench), "(entry: i32)"),
     ];
     pub fn invalid() -> ! {
         unimplemented!()
@@ -283,11 +283,11 @@ impl SysCalls {
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
+            let argno = argraw(0);
             unsafe {
                 CONCURRENTHASHMAP.init(10);
-                CONCURRENTHASHMAP.insert(1, 1);
-                CONCURRENTHASHMAP.get(&1);
-                println!("ConcurrentHashMap: {:?}", CONCURRENTHASHMAP.get(&1).unwrap());
+                CONCURRENTHASHMAP.insert(argno, argno*2);
+                println!("ConcurrentHashMap inserted");
             }
             Ok(0)
         }
@@ -298,10 +298,10 @@ impl SysCalls {
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
+            let argno = argraw(0);
             unsafe {
-                CONCURRENTHASHMAP.insert(1, 1);
-                CONCURRENTHASHMAP.get(&1);
-                println!("ConcurrentHashMap: {:?}", CONCURRENTHASHMAP.get(&1));
+                CONCURRENTHASHMAP.get(&argno);
+                println!("access: {:?}", CONCURRENTHASHMAP.get(&argno));
             }
             Ok(0)
         }

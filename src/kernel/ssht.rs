@@ -8,7 +8,7 @@ struct Entry<K, V> {
     value: V,
 }
 
-pub static mut CONCURRENTHASHMAP: ConcurrentHashMap<i32, i32> = ConcurrentHashMap::new();
+pub static mut CONCURRENTHASHMAP: ConcurrentHashMap<usize, usize> = ConcurrentHashMap::new();
 
 // Concurrent hash map implementation.
 pub struct ConcurrentHashMap<K, V> {

@@ -1,17 +1,22 @@
 #![no_std]
 use core::usize;
 
-use ulib::sys;
+use alloc::vec::Vec;
+use ulib::{
+    env,sys,print,println
+};
 extern crate alloc;
 
 fn main() {
-    let _ = lockbench().unwrap();
-    // TODO: Change these variables to be inferred from the command line arguments.
-    // let locktype = "ticket";
-    // let numthreads = 4;
-    // let contention = 0;
+    let args = env::args().collect::<Vec<&str>>();
+    println!("bench {} is {}", args[0], args[1]);
+    let res = lockbench(args[1],args[2]).unwrap();
 }
 
-fn lockbench() -> sys::Result<usize> {
-    sys::createbench()
+fn lockbench(ig: &str, benchno: &str) -> sys::Result<usize>{
+    if ig == "i" {
+        sys::createbench(benchno.parse().unwrap())
+    } else {
+        sys::accessbench(benchno.parse().unwrap())
+    }
 }
