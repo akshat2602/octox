@@ -283,7 +283,12 @@ impl SysCalls {
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
-            CONCURRENTHASHMAP.lock().init(10);
+            unsafe {
+                CONCURRENTHASHMAP.init(10);
+                CONCURRENTHASHMAP.insert(1, 1);
+                CONCURRENTHASHMAP.get(&1);
+                println!("ConcurrentHashMap: {:?}", CONCURRENTHASHMAP.get(&1).unwrap());
+            }
             Ok(0)
         }
     }
@@ -293,6 +298,11 @@ impl SysCalls {
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
+            unsafe {
+                CONCURRENTHASHMAP.insert(1, 1);
+                CONCURRENTHASHMAP.get(&1);
+                println!("ConcurrentHashMap: {:?}", CONCURRENTHASHMAP.get(&1));
+            }
             Ok(0)
         }
     }
