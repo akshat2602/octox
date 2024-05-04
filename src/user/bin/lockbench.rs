@@ -1,19 +1,17 @@
 #![no_std]
 use core::usize;
 
-use ulib::{
-    env,sys,print,println
-};
+use ulib::sys;
 extern crate alloc;
 
 fn main() {
-    let args = env::args();
-    for arg in args.skip(1) {
-        let res = lockbench(arg).unwrap();
-        println!("Result of bench {} is {}", arg, res);
-    }
+    let _ = lockbench().unwrap();
+    // TODO: Change these variables to be inferred from the command line arguments.
+    // let locktype = "ticket";
+    // let numthreads = 4;
+    // let contention = 0;
 }
 
-fn lockbench(benchno: &str) -> sys::Result<usize>{
-    sys::bench(benchno.parse().unwrap())
+fn lockbench() -> sys::Result<usize> {
+    sys::createbench()
 }

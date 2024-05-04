@@ -20,11 +20,7 @@ name = "octox"
 path = "src/kernel/main.rs"
 
 [workspace]
-members = [
-    "src/kernel",
-    "src/mkfs",
-    "src/user",
-]
+members = ["src/kernel", "src/mkfs", "src/user"]
 
 [workspace.dependencies]
 libkernel = { path = "src/kernel", default-features = false }

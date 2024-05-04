@@ -1,60 +1,57 @@
-use crate::ticketlock::TicketLock;
 use alloc::vec::Vec;
 use core::hash::Hasher;
 
-// Custom implementation of a simple hash map entry.
+use crate::ticketlock::TicketLock;
+
 struct Entry<K, V> {
     key: K,
     value: V,
 }
 
-// Concurrent hash map implementation.
-pub struct ConcurrentHashMap<K, V> {
-    buckets: Vec<Option<TicketLock<Entry<K, V>>>>,
+pub static CONCURRENTHASHMAP: TicketLock<HashMap<u32, u32>> =
+    TicketLock::new(HashMap::new(), "CONCURRENTHASHMAP");
+
+// Hash map implementation.
+pub struct HashMap<K, V> {
+    buckets: Vec<Option<Entry<K, V>>>,
     size: usize,
 }
 
-impl<K, V> ConcurrentHashMap<K, V>
+impl<K, V> HashMap<K, V>
 where
     K: Eq + core::hash::Hash,
 {
-    // Create a new concurrent hash map with specified initial capacity.
-    pub fn new(capacity: usize) -> Self {
-        let mut buckets = Vec::with_capacity(capacity);
-        for _ in 0..capacity {
-            buckets.push(None);
+    pub const fn new() -> Self {
+        Self {
+            buckets: Vec::new(),
+            size: 0,
         }
-        ConcurrentHashMap { buckets, size: 0 }
     }
 
-    // Helper function to get the bucket index based on the hash of the key.
+    pub fn init(&mut self, capacity: usize) {
+        self.buckets = Vec::with_capacity(capacity);
+        for _ in 0..capacity {
+            self.buckets.push(None);
+        }
+    }
+
     fn get_bucket_index(&self, key: &K) -> usize {
-        let hash = self.hash(key);
-        hash % self.buckets.len()
+        self.hash(key) % self.buckets.len()
     }
 
-    // Insert a key-value pair into the hash map.
     pub fn insert(&mut self, key: K, value: V) {
         let index = self.get_bucket_index(&key);
 
-        // Initialize the TicketLock if it's not already initialized.
         if self.buckets[index].is_none() {
-            self.buckets[index] =
-                Some(TicketLock::new(Entry { key, value }, "concurrent_hash_map"));
+            self.buckets[index] = Some(Entry { key, value });
+            self.size += 1;
         }
-        // Call the lock method to acquire the lock.
-        let ticket_lock = self.buckets[index].as_ref().unwrap();
-        let mut _guard = ticket_lock.lock();
-        self.size += 1;
     }
 
-    // Retrieve a value associated with the given key from the hash map.
     pub fn get(&self, key: &K) -> Option<&V> {
         let index = self.get_bucket_index(key);
 
-        if let Some(ticket_lock) = &self.buckets[index] {
-            let guard = ticket_lock.lock();
-            let entry = unsafe { &*guard.lock().get_mut() };
+        if let Some(entry) = &self.buckets[index] {
             if &entry.key == key {
                 return Some(&entry.value);
             }
@@ -71,7 +68,6 @@ where
     }
 }
 
-// Example FNV-1a hash function implementation (compatible with `no_std` environment).
 #[derive(Default)]
 struct FnvHasher {
     state: u64,

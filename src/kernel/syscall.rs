@@ -12,9 +12,10 @@ use crate::{
     log::LOG,
     param::{MAXARG, MAXPATH},
     pipe::Pipe,
+    println,
     proc::*,
     riscv::PGSIZE,
-    ssht::ConcurrentHashMap,
+    ssht::CONCURRENTHASHMAP,
     stat::FileType,
     trap::TICKS,
     vm::{Addr, UVAddr},
@@ -53,7 +54,8 @@ pub enum SysCalls {
     Close = 21,
     Dup2 = 22,
     Fcntl = 23,
-    Bench = 24,
+    CreateBench = 24,
+    AccessBench = 25,
     Invalid = 0,
 }
 
@@ -104,7 +106,8 @@ impl SysCalls {
         (Fn::U(Self::close), "(fd: usize)"),               // Release open file fd.
         (Fn::I(Self::dup2), "(src: usize, dst: usize)"),   //
         (Fn::I(Self::fcntl), "(fd: usize, cmd: FcntlCmd)"), //
-        (Fn::I(Self::bench), "(benchno: i32)"),
+        (Fn::I(Self::createbench), "()"),
+        (Fn::I(Self::accessbench), "()"),
     ];
     pub fn invalid() -> ! {
         unimplemented!()
@@ -275,16 +278,22 @@ fn fdalloc(file: File) -> Result<usize> {
 
 impl SysCalls {
     // TODO: Kernel benchmarking system calls
-    pub fn bench() -> Result<usize> {
+    pub fn createbench() -> Result<usize> {
         #[cfg(not(all(target_os = "none", feature = "kernel")))]
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
-            let argno = argraw(0);
-            let mut _kv = ConcurrentHashMap::new(10);
-            _kv.insert(argno, argno * 2);
-            _kv.insert(argno * 3, argno * 5);
-            Ok(_kv.get(&argno).unwrap().clone() + _kv.get(&(argno * 3)).unwrap().clone())
+            CONCURRENTHASHMAP.lock().init(10);
+            Ok(0)
+        }
+    }
+
+    pub fn accessbench() -> Result<usize> {
+        #[cfg(not(all(target_os = "none", feature = "kernel")))]
+        return Ok(0);
+        #[cfg(all(target_os = "none", feature = "kernel"))]
+        {
+            Ok(0)
         }
     }
 }
@@ -673,7 +682,8 @@ impl SysCalls {
             21 => Self::Close,
             22 => Self::Dup2,
             23 => Self::Fcntl,
-            24 => Self::Bench,
+            24 => Self::CreateBench,
+            25 => Self::AccessBench,
             _ => Self::Invalid,
         }
     }
