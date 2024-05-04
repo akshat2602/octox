@@ -28,6 +28,10 @@ where
         }
     }
 
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
     pub fn init(&mut self, capacity: usize) {
         let mut buckets: Vec<Option<TicketLock<Entry<K, V>>>> = Vec::with_capacity(capacity);
         for _ in 0..capacity {

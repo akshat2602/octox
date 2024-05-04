@@ -17,6 +17,8 @@
 extern crate alloc;
 
 #[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod bench;
+#[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod condvar;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod console;

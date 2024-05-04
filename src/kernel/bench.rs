@@ -3,7 +3,6 @@ extern crate alloc;
 use crate::println;
 use crate::ssht::CONCURRENTHASHMAP;
 use crate::trap::TICKS;
-use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 pub fn bench_start() {
@@ -13,10 +12,14 @@ pub fn bench_start() {
     let mut thread_time = Vec::new();
 
     // Insert and get values concurrently
-    for i in 0..2000 {
+    for i in 0..2000000 {
         let start = *TICKS.lock();
-        CONCURRENTHASHMAP.lock().insert(i, i * 2);
-        let _ = CONCURRENTHASHMAP.lock().get(&i);
+        unsafe {
+            CONCURRENTHASHMAP.insert(i, i * 2);
+            CONCURRENTHASHMAP.get(&i).unwrap_or_else(|| {
+                &0
+            });
+        }
         // Optionally check or use the retrieved value
         let end = *TICKS.lock();
         thread_time.push(end - start);

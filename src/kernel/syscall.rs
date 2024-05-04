@@ -4,6 +4,7 @@ use crate::error::Result;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 use crate::{
     array,
+    bench::bench_start,
     defs::AsBytes,
     exec::exec,
     fcntl::{FcntlCmd, OMode},
