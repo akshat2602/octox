@@ -304,6 +304,7 @@ impl SysCalls {
                 CONCURRENTHASHMAP.get(&argno);
                 println!("access: {:?}", CONCURRENTHASHMAP.get(&argno));
             }
+            bench_start();
             Ok(0)
         }
     }
