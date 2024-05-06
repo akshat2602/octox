@@ -6,7 +6,7 @@
 #![cfg_attr(all(target_os = "none", feature = "kernel"), feature(new_uninit))]
 #![cfg_attr(all(target_os = "none", feature = "kernel"), feature(allocator_api))]
 #![feature(negative_impls)]
-#![feature(associated_type_bounds)]
+// #![feature(associated_type_bounds)]
 #![feature(naked_functions)]
 #![feature(asm_const)]
 #![feature(fn_align)]
@@ -43,6 +43,8 @@ pub mod sleeplock;
 pub mod spinlock;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod spinlock_faa;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod spinlock_tas;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod ssht;
 #[cfg(all(target_os = "none", feature = "kernel"))]
