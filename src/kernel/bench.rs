@@ -9,11 +9,11 @@ pub fn bench_start() {
     // Record the start time of the benchmark without the std library
     let start = *TICKS.lock();
 
-    let mut thread_time = Vec::new();
+    // let mut thread_time = Vec::new();
 
     // Insert and get values concurrently
-    for i in 0..2000000 {
-        let start = *TICKS.lock();
+    for i in 0..4000000 {
+        // let start = *TICKS.lock();
         unsafe {
             CONCURRENTHASHMAP.insert(i, i * 2);
             CONCURRENTHASHMAP.get(&i).unwrap_or_else(|| {
@@ -21,15 +21,17 @@ pub fn bench_start() {
             });
         }
         // Optionally check or use the retrieved value
-        let end = *TICKS.lock();
-        thread_time.push(end - start);
+        // let end = *TICKS.lock();
+        // thread_time.push(end - start);
     }
 
     // Record the end time of the benchmark without the std library
     let end = *TICKS.lock();
 
     // Print the elapsed time
-    println!("Elapsed time for the benchmark: {} ticks", end - start);
+    unsafe{
+        println!("Size: {} , Elapsed time for the benchmark: {} ticks", CONCURRENTHASHMAP.size(),end - start);
+    }
 
     // Time taken is in ticks, to convert it to seconds, divide by the frequency of the timer
     // Frequency of the timer is 10000000 Hz as found in https://github.com/qemu/qemu/blob/master/hw/riscv/virt.c
