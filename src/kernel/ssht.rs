@@ -1,6 +1,6 @@
 use crate::ticketlock::TicketLock;
 use alloc::vec::Vec;
-use core::hash::Hasher;
+use core::{hash::Hasher, sync::atomic::AtomicUsize};
 
 // Custom implementation of a simple hash map entry.
 struct Entry<K, V> {
@@ -13,7 +13,9 @@ pub static mut CONCURRENTHASHMAP: ConcurrentHashMap<usize, usize> = ConcurrentHa
 // Concurrent hash map implementation.
 pub struct ConcurrentHashMap<K, V> {
     buckets: Vec<Option<TicketLock<Entry<K, V>>>>,
-    size: usize,
+    size: AtomicUsize,
+    // size: usize,
+    // size: TicketLock<usize>,
 }
 
 impl<K, V> ConcurrentHashMap<K, V>
@@ -24,12 +26,17 @@ where
     pub const fn new() -> Self {
         Self {
             buckets: Vec::new(),
-            size: 0,
+            // size: 0
+            size: AtomicUsize::new(0)
+            // size: TicketLock::new(0, "init"),
         }
     }
 
     pub fn size(&self) -> usize {
-        self.size
+        self.size.load(core::sync::atomic::Ordering::Acquire)
+        // unsafe {
+        //     *self.size.get_mut()
+        // }
     }
 
     pub fn init(&mut self, capacity: usize) {
@@ -38,6 +45,7 @@ where
             buckets.push(None);
         }
         self.buckets = buckets;
+        // self.size = TicketLock::new(0,"concurrent_hash_map_size");
     }
 
     // Helper function to get the bucket index based on the hash of the key.
@@ -58,7 +66,11 @@ where
         // Call the lock method to acquire the lock.
         let ticket_lock = self.buckets[index].as_ref().unwrap();
         let mut _guard = ticket_lock.lock();
-        self.size += 1;
+        self.size.fetch_add(1, core::sync::atomic::Ordering::Acquire);
+        // self.size += 1;
+        // unsafe {
+        //     *self.size.get_mut() += 1;
+        // }
     }
 
     // Retrieve a value associated with the given key from the hash map.

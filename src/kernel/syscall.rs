@@ -108,7 +108,7 @@ impl SysCalls {
         (Fn::I(Self::dup2), "(src: usize, dst: usize)"),   //
         (Fn::I(Self::fcntl), "(fd: usize, cmd: FcntlCmd)"), //
         (Fn::I(Self::createbench), "(entry: i32)"),
-        (Fn::I(Self::accessbench), "(entry: i32)"),
+        (Fn::I(Self::accessbench), "(pno: i32, bench_strategy: i32)"),
     ];
     pub fn invalid() -> ! {
         unimplemented!()
@@ -284,10 +284,9 @@ impl SysCalls {
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
-            let argno = argraw(0);
             unsafe {
                 CONCURRENTHASHMAP.init(10);
-                CONCURRENTHASHMAP.insert(argno, argno*2);
+                // CONCURRENTHASHMAP.insert(argno, argno*2);
                 println!("ConcurrentHashMap inserted");
             }
             Ok(0)
@@ -299,12 +298,15 @@ impl SysCalls {
         return Ok(0);
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
-            let argno = argraw(0);
-            unsafe {
-                CONCURRENTHASHMAP.get(&argno);
-                println!("access: {:?}", CONCURRENTHASHMAP.get(&argno));
+            let pno: i32 = argraw(0) as i32;
+            let bench_strategy: i32 = argraw(1) as i32;
+            if pno != -1 {
+                bench_start(pno, bench_strategy);
+            } else {
+                unsafe {
+                    println!("Final size: {}", CONCURRENTHASHMAP.size())
+                }
             }
-            bench_start();
             Ok(0)
         }
     }
