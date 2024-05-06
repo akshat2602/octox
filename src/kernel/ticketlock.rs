@@ -15,7 +15,7 @@ pub struct TicketLock<T> {
 
 #[derive(Debug)]
 pub struct TicketLockGuard<'a, T: 'a> {
-    lock: &'a TicketLock<T>,
+    mutex: &'a TicketLock<T>,
     _intr_lock: IntrLock,
     my_ticket: usize,
 }
@@ -39,7 +39,7 @@ impl<T> TicketLock<T> {
         }
 
         TicketLockGuard {
-            lock: self,
+            mutex: self,
             _intr_lock,
             my_ticket,
         }
@@ -74,32 +74,32 @@ unsafe impl<T: Send> Sync for TicketLock<T> {}
 impl<'a, T: 'a> TicketLockGuard<'a, T> {
     // Returns a reference to the original 'TicketLock' object.
     pub fn lock(&self) -> &'a TicketLock<T> {
-        self.lock
+        self.mutex
     }
 
     pub fn holding(&self) -> bool {
         assert!(!intr_get(), "interrupts enabled");
-        unsafe { self.lock.holding(self) }
+        unsafe { self.mutex.holding(self) }
     }
 }
 
 impl<'a, T: 'a> Drop for TicketLockGuard<'a, T> {
     fn drop(&mut self) {
-        assert!(self.holding(), "release {}", self.lock.name);
-        self.lock.now_serving.fetch_add(1, Ordering::Release);
+        assert!(self.holding(), "release {}", self.mutex.name);
+        self.mutex.now_serving.fetch_add(1, Ordering::Release);
     }
 }
 
 impl<'a, T: 'a> Deref for TicketLockGuard<'a, T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
-        unsafe { &*self.lock.data.get() }
+        unsafe { &*self.mutex.data.get() }
     }
 }
 
 impl<'a, T: 'a> DerefMut for TicketLockGuard<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { &mut *self.lock.data.get() }
+        unsafe { &mut *self.mutex.data.get() }
     }
 }
 

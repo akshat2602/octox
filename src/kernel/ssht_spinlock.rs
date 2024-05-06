@@ -1,4 +1,4 @@
-use crate::ticketlock::TicketLock;
+use crate::spinlock::Mutex;
 use alloc::vec::Vec;
 use core::{hash::Hasher, sync::atomic::AtomicUsize};
 
@@ -8,17 +8,17 @@ struct Entry<K, V> {
     value: V,
 }
 
-pub static mut CONCURRENTHASHMAP: ConcurrentHashMap<usize, usize> = ConcurrentHashMap::new();
+pub static mut CONCURRENTHASHMAPSPINLOCK: ConcurrentHashMapSpinLock<i32, i32> = ConcurrentHashMapSpinLock::new();
 
 // Concurrent hash map implementation.
-pub struct ConcurrentHashMap<K, V> {
-    buckets: Vec<Option<TicketLock<Entry<K, V>>>>,
+pub struct ConcurrentHashMapSpinLock<K, V> {
+    buckets: Vec<Option<Mutex<Entry<K, V>>>>,
     size: AtomicUsize,
     // size: usize,
     // size: TicketLock<usize>,
 }
 
-impl<K, V> ConcurrentHashMap<K, V>
+impl<K, V> ConcurrentHashMapSpinLock<K, V>
 where
     K: Eq + core::hash::Hash,
 {
@@ -40,7 +40,7 @@ where
     }
 
     pub fn init(&mut self, capacity: usize) {
-        let mut buckets: Vec<Option<TicketLock<Entry<K, V>>>> = Vec::with_capacity(capacity);
+        let mut buckets: Vec<Option<Mutex<Entry<K, V>>>> = Vec::with_capacity(capacity);
         for _ in 0..capacity {
             buckets.push(None);
         }
@@ -61,11 +61,11 @@ where
         // Initialize the TicketLock if it's not already initialized.
         if self.buckets[index].is_none() {
             self.buckets[index] =
-                Some(TicketLock::new(Entry { key, value }, "concurrent_hash_map"));
+                Some(Mutex::new(Entry { key, value }, "concurrent_hash_map_spin_lock"));
         }
         // Call the lock method to acquire the lock.
-        let ticket_lock = self.buckets[index].as_ref().unwrap();
-        let mut _guard = ticket_lock.lock();
+        let spin_lock = self.buckets[index].as_ref().unwrap();
+        let mut _guard = spin_lock.lock();
         self.size.fetch_add(1, core::sync::atomic::Ordering::Acquire);
         // self.size += 1;
         // unsafe {
@@ -77,8 +77,8 @@ where
     pub fn get(&self, key: &K) -> Option<&V> {
         let index = self.get_bucket_index(key);
 
-        if let Some(ticket_lock) = &self.buckets[index] {
-            let guard = ticket_lock.lock();
+        if let Some(spin_lock) = &self.buckets[index] {
+            let guard = spin_lock.lock();
             let entry = unsafe { &*guard.lock().get_mut() };
             if &entry.key == key {
                 return Some(&entry.value);

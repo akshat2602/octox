@@ -17,6 +17,6 @@ fn lockbench(ig: &str, benchno: &str) -> sys::Result<usize>{
     if ig == "i" {
         sys::createbench(benchno.parse().unwrap())
     } else {
-        sys::accessbench(benchno.parse().unwrap(), 1)
+        sys::accessbench(benchno.parse().unwrap(), 1, 1)
     }
 }

@@ -16,7 +16,10 @@ use crate::{
     println,
     proc::*,
     riscv::PGSIZE,
-    ssht::CONCURRENTHASHMAP,
+    ssht_spinlock::CONCURRENTHASHMAPSPINLOCK,
+    ssht_spinlock_faa::CONCURRENTHASHMAPSPINLOCKFAA,
+    ssht_spinlock_tas::CONCURRENTHASHMAPSPINLOCKTAS,
+    ssht_ticket::CONCURRENTHASHMAP,
     stat::FileType,
     trap::TICKS,
     vm::{Addr, UVAddr},
@@ -108,7 +111,10 @@ impl SysCalls {
         (Fn::I(Self::dup2), "(src: usize, dst: usize)"),   //
         (Fn::I(Self::fcntl), "(fd: usize, cmd: FcntlCmd)"), //
         (Fn::I(Self::createbench), "(entry: i32)"),
-        (Fn::I(Self::accessbench), "(pno: i32, bench_strategy: i32)"),
+        (
+            Fn::I(Self::accessbench),
+            "(pno: i32, bench_strategy: i32, contention: i32)",
+        ),
     ];
     pub fn invalid() -> ! {
         unimplemented!()
@@ -285,7 +291,10 @@ impl SysCalls {
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
             unsafe {
-                CONCURRENTHASHMAP.init(10);
+                CONCURRENTHASHMAP.init(25);
+                CONCURRENTHASHMAPSPINLOCK.init(25);
+                CONCURRENTHASHMAPSPINLOCKFAA.init(25);
+                CONCURRENTHASHMAPSPINLOCKTAS.init(25);
                 // CONCURRENTHASHMAP.insert(argno, argno*2);
                 println!("ConcurrentHashMap inserted");
             }
@@ -300,12 +309,11 @@ impl SysCalls {
         {
             let pno: i32 = argraw(0) as i32;
             let bench_strategy: i32 = argraw(1) as i32;
+            let contention: i32 = argraw(2) as i32;
             if pno != -1 {
-                bench_start(pno, bench_strategy);
+                bench_start(pno, bench_strategy, contention);
             } else {
-                unsafe {
-                    println!("Final size: {}", CONCURRENTHASHMAP.size())
-                }
+                unsafe { println!("Final size: {}", CONCURRENTHASHMAP.size()) }
             }
             Ok(0)
         }
