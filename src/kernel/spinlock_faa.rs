@@ -7,9 +7,9 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Debug)]
 pub struct Mutex<T> {
-    name: &'static str,     // Name of lock
+    name: &'static str,  // Name of lock
     locked: AtomicUsize, // Is the lock held?
-    data: UnsafeCell<T>,    // actual data
+    data: UnsafeCell<T>, // actual data
 }
 
 #[derive(Debug)]
@@ -21,7 +21,8 @@ pub struct MutexGuard<'a, T: 'a> {
 impl<T> Mutex<T> {
     pub const fn new(value: T, name: &'static str) -> Mutex<T> {
         Mutex {
-            locked: AtomicUsize::new(0),
+            // MAGIC NUMBER
+            locked: AtomicUsize::new(9999),
             data: UnsafeCell::new(value),
             name,
         }
@@ -42,8 +43,8 @@ impl<T> Mutex<T> {
                     //     Ordering::Acquire,
                     //     Ordering::Relaxed,
                     // )
-                    .fetch_add(Cpus::cpu_id(), Ordering::Acquire)
-                    == 0
+                    .fetch_add(Cpus::cpu_id() + 1, Ordering::Acquire)
+                    == 9999
                 {
                     break MutexGuard {
                         mutex: self,
@@ -58,7 +59,7 @@ impl<T> Mutex<T> {
     // Check whether this cpu is holding the lock.
     // Interrupts must be off.
     unsafe fn holding(&self) -> bool {
-        self.locked.load(Ordering::Relaxed) == Cpus::cpu_id()
+        self.locked.load(Ordering::Relaxed) == (Cpus::cpu_id() + 9999 + 1)
     }
 
     pub fn unlock(guard: MutexGuard<'_, T>) -> &'_ Mutex<T> {
@@ -74,7 +75,7 @@ impl<T> Mutex<T> {
     // where passing guards is difficult.
     pub unsafe fn force_unlock(&self) {
         assert!(self.holding(), "force unlock {}", self.name);
-        self.locked.store(0, Ordering::Release);
+        self.locked.store(9999, Ordering::Release);
         (&mut *CPUS.mycpu()).unlock()
     }
 }
@@ -96,7 +97,7 @@ impl<'a, T: 'a> MutexGuard<'a, T> {
 impl<'a, T: 'a> Drop for MutexGuard<'a, T> {
     fn drop(&mut self) {
         assert!(self.holding(), "release {}", self.mutex.name);
-        self.mutex.locked.store(0, Ordering::Release);
+        self.mutex.locked.store(9999, Ordering::Release);
     }
 }
 

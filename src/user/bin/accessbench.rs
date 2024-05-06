@@ -18,7 +18,7 @@ fn main() {
         let start_all = sys::uptime().unwrap();
         start(args[2], args[3]);
         println!{"Time to complete all: {}",sys::uptime().unwrap() - start_all};
-    } else if args[1] == "run" { 
+    } else if args[1] == "run" {
         accessbench(args[2], args[3], args[4]);
     }
     
@@ -68,7 +68,7 @@ fn start(overall_benchmark_idea: &str, contention: &str) {
 // fn accessbench() -> sys::Result<usize> {
 fn accessbench(pno_str: &str, bench_strategy_str: &str, contention: &str) {
 
-    sys::sleep(100);
+    sys::sleep(200);
 
     let pno: i32 = pno_str.parse().unwrap();
     let bench_strategy: i32 = bench_strategy_str.parse().unwrap();

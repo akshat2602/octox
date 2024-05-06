@@ -11,7 +11,7 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
     // Record the start time of the benchmark without the std library
     let start = *TICKS.lock();
 
-    let result = match bench_strategy {
+    let (result, avg_lat) = match bench_strategy {
         1 => bench_ticket(contention, pno),
         2 => bench_spin(contention, pno),
         3 => bench_spin_faa(contention, pno),
@@ -23,10 +23,11 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
 
     // Print the elapsed time for the benchmark
     println!(
-        "Processor: {}, Size: {} , Elapsed time for the benchmark: {} ticks",
+        "Processor: {}, Size: {} , Elapsed time for the benchmark: {} ticks, Average latency: {} ticks",
         pno,
         result,
-        end - start
+        end - start,
+        avg_lat
     );
 
     // Time taken is in ticks, to convert it to seconds, divide by the frequency of the timer
@@ -36,16 +37,15 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
     println!("Elapsed time for the benchmark: {} seconds", elapsed_time);
 }
 
-fn default_value() -> i32 {
-    -1
+fn default_value() -> (i32, i32) {
+    (-1, -1)
 }
 
-fn bench_ticket(contention: i32, proc_num: i32) -> i32 {
-    println!("Processor: {}", proc_num);
-    println!("Contention: {}", contention);
+fn bench_ticket(contention: i32, proc_num: i32) -> (i32, i32) {
     // Insert and get values concurrently
+    let mut avg_time: i32 = 0;
     for i in 0..4000000 {
-        // let start = *TICKS.lock();
+        let start = *TICKS.lock();
         if contention == 1 {
             unsafe {
                 // Highest contention
@@ -70,16 +70,21 @@ fn bench_ticket(contention: i32, proc_num: i32) -> i32 {
             }
         }
         // Optionally check or use the retrieved value
-        // let end = *TICKS.lock();
+        let end = *TICKS.lock();
         // thread_time.push(end - start);
+        avg_time += (end - start) as i32;
     }
-    return unsafe { CONCURRENTHASHMAP.size() as i32 };
+    return (
+        unsafe { CONCURRENTHASHMAP.size() as i32 },
+        avg_time / 4000000,
+    );
 }
 
-fn bench_spin(contention: i32, proc_num: i32) -> i32 {
+fn bench_spin(contention: i32, proc_num: i32) -> (i32, i32) {
     // Insert and get values concurrently
+    let mut avg_time: i32 = 0;
     for i in 0..4000000 {
-        // let start = *TICKS.lock();
+        let start = *TICKS.lock();
         if contention == 1 {
             unsafe {
                 CONCURRENTHASHMAPSPINLOCK.insert(1, i * 2);
@@ -102,16 +107,21 @@ fn bench_spin(contention: i32, proc_num: i32) -> i32 {
             }
         }
         // Optionally check or use the retrieved value
-        // let end = *TICKS.lock();
+        let end = *TICKS.lock();
         // thread_time.push(end - start);
+        avg_time += (end - start) as i32;
     }
-    return unsafe { CONCURRENTHASHMAPSPINLOCK.size() as i32 };
+    return (
+        unsafe { CONCURRENTHASHMAPSPINLOCK.size() as i32 },
+        avg_time / 4000000,
+    );
 }
 
-fn bench_spin_faa(contention: i32, proc_num: i32) -> i32 {
+fn bench_spin_faa(contention: i32, proc_num: i32) -> (i32, i32) {
     // Insert and get values concurrently
+    let mut avg_time: i32 = 0;
     for i in 0..4000000 {
-        // let start = *TICKS.lock();
+        let start = *TICKS.lock();
         if contention == 1 {
             unsafe {
                 CONCURRENTHASHMAPSPINLOCKFAA.insert(i, i * 2);
@@ -134,16 +144,21 @@ fn bench_spin_faa(contention: i32, proc_num: i32) -> i32 {
             }
         }
         // Optionally check or use the retrieved value
-        // let end = *TICKS.lock();
+        let end = *TICKS.lock();
         // thread_time.push(end - start);
+        avg_time += (end - start) as i32;
     }
-    return unsafe { CONCURRENTHASHMAPSPINLOCKFAA.size() as i32 };
+    return (
+        unsafe { CONCURRENTHASHMAPSPINLOCKFAA.size() as i32 },
+        avg_time / 4000000,
+    );
 }
 
-fn bench_spin_tas(contention: i32, proc_num: i32) -> i32 {
+fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, i32) {
+    let mut avg_time: i32 = 0;
     // Insert and get values concurrently
     for i in 0..4000000 {
-        // let start = *TICKS.lock();
+        let start = *TICKS.lock();
         if contention == 1 {
             unsafe {
                 CONCURRENTHASHMAPSPINLOCKTAS.insert(i, i * 2);
@@ -166,8 +181,12 @@ fn bench_spin_tas(contention: i32, proc_num: i32) -> i32 {
             }
         }
         // Optionally check or use the retrieved value
-        // let end = *TICKS.lock();
+        let end = *TICKS.lock();
         // thread_time.push(end - start);
+        avg_time += (end - start) as i32;
     }
-    return unsafe { CONCURRENTHASHMAPSPINLOCKTAS.size() as i32 };
+    return (
+        unsafe { CONCURRENTHASHMAPSPINLOCKTAS.size() as i32 },
+        avg_time / 4000000,
+    );
 }
