@@ -11,25 +11,23 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
     // Record the start time of the benchmark without the std library
     let start = *TICKS.lock();
 
-    match bench_strategy {
+    let result = match bench_strategy {
         1 => bench_ticket(contention, pno),
         2 => bench_spin(contention, pno),
         3 => bench_spin_faa(contention, pno),
         4 => bench_spin_tas(contention, pno),
-        _ => (),
-    }
+        _ => default_value(),
+    };
 
     let end = *TICKS.lock();
 
-    // Print the elapsed time
-    unsafe {
-        println!(
-            "Processor: {}, Size: {} , Elapsed time for the benchmark: {} ticks",
-            pno,
-            CONCURRENTHASHMAP.size(),
-            end - start
-        );
-    }
+    // Print the elapsed time for the benchmark
+    println!(
+        "Processor: {}, Size: {} , Elapsed time for the benchmark: {} ticks",
+        pno,
+        result,
+        end - start
+    );
 
     // Time taken is in ticks, to convert it to seconds, divide by the frequency of the timer
     // Frequency of the timer is 10000000 Hz as found in https://github.com/qemu/qemu/blob/master/hw/riscv/virt.c
@@ -38,7 +36,11 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
     println!("Elapsed time for the benchmark: {} seconds", elapsed_time);
 }
 
-fn bench_ticket(contention: i32, proc_num: i32) {
+fn default_value() -> i32 {
+    -1
+}
+
+fn bench_ticket(contention: i32, proc_num: i32) -> i32 {
     println!("Processor: {}", proc_num);
     println!("Contention: {}", contention);
     // Insert and get values concurrently
@@ -71,16 +73,17 @@ fn bench_ticket(contention: i32, proc_num: i32) {
         // let end = *TICKS.lock();
         // thread_time.push(end - start);
     }
+    return unsafe { CONCURRENTHASHMAP.size() as i32 };
 }
 
-fn bench_spin(contention: i32, proc_num: i32) {
+fn bench_spin(contention: i32, proc_num: i32) -> i32 {
     // Insert and get values concurrently
     for i in 0..4000000 {
         // let start = *TICKS.lock();
         if contention == 1 {
             unsafe {
-                CONCURRENTHASHMAPSPINLOCK.insert(i, i * 2);
-                CONCURRENTHASHMAPSPINLOCK.get(&i).unwrap_or_else(|| &0);
+                CONCURRENTHASHMAPSPINLOCK.insert(1, i * 2);
+                CONCURRENTHASHMAPSPINLOCK.get(&1).unwrap_or_else(|| &0);
             }
         } else if contention == 2 {
             unsafe {
@@ -102,9 +105,10 @@ fn bench_spin(contention: i32, proc_num: i32) {
         // let end = *TICKS.lock();
         // thread_time.push(end - start);
     }
+    return unsafe { CONCURRENTHASHMAPSPINLOCK.size() as i32 };
 }
 
-fn bench_spin_faa(contention: i32, proc_num: i32) {
+fn bench_spin_faa(contention: i32, proc_num: i32) -> i32 {
     // Insert and get values concurrently
     for i in 0..4000000 {
         // let start = *TICKS.lock();
@@ -133,9 +137,10 @@ fn bench_spin_faa(contention: i32, proc_num: i32) {
         // let end = *TICKS.lock();
         // thread_time.push(end - start);
     }
+    return unsafe { CONCURRENTHASHMAPSPINLOCKFAA.size() as i32 };
 }
 
-fn bench_spin_tas(contention: i32, proc_num: i32) {
+fn bench_spin_tas(contention: i32, proc_num: i32) -> i32 {
     // Insert and get values concurrently
     for i in 0..4000000 {
         // let start = *TICKS.lock();
@@ -164,4 +169,5 @@ fn bench_spin_tas(contention: i32, proc_num: i32) {
         // let end = *TICKS.lock();
         // thread_time.push(end - start);
     }
+    return unsafe { CONCURRENTHASHMAPSPINLOCKTAS.size() as i32 };
 }

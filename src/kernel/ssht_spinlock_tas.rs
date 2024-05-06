@@ -8,20 +8,20 @@ struct Entry<K, V> {
     value: V,
 }
 
-pub static mut CONCURRENTHASHMAPSPINLOCKTAS: ConcurrentHashMapSpinLockTAS<i32, i32> =
+pub static mut CONCURRENTHASHMAPSPINLOCKTAS: ConcurrentHashMapSpinLockTAS =
     ConcurrentHashMapSpinLockTAS::new();
 
 // Concurrent hash map implementation.
-pub struct ConcurrentHashMapSpinLockTAS<K, V> {
-    buckets: Vec<Option<Mutex<Entry<K, V>>>>,
+pub struct ConcurrentHashMapSpinLockTAS {
+    buckets: Vec<Option<Mutex<Entry<i32, i32>>>>,
     size: AtomicUsize,
     // size: usize,
     // size: TicketLock<usize>,
 }
 
-impl<K, V> ConcurrentHashMapSpinLockTAS<K, V>
+impl ConcurrentHashMapSpinLockTAS
 where
-    K: Eq + core::hash::Hash,
+    i32: Eq + core::hash::Hash,
 {
     // Create a new concurrent hash map with specified initial capacity.
     pub const fn new() -> Self {
@@ -40,7 +40,7 @@ where
     }
 
     pub fn init(&mut self, capacity: usize) {
-        let mut buckets: Vec<Option<Mutex<Entry<K, V>>>> = Vec::with_capacity(capacity);
+        let mut buckets: Vec<Option<Mutex<Entry<i32, i32>>>> = Vec::with_capacity(capacity);
         for _ in 0..capacity {
             buckets.push(None);
         }
@@ -49,25 +49,28 @@ where
     }
 
     // Helper function to get the bucket index based on the hash of the key.
-    fn get_bucket_index(&self, key: &K) -> usize {
+    fn get_bucket_index(&self, key: &i32) -> usize {
         let hash = self.hash(key);
         hash % self.buckets.len()
     }
 
     // Insert a key-value pair into the hash map.
-    pub fn insert(&mut self, key: K, value: V) {
+    pub fn insert(&mut self, key: i32, value: i32) {
         let index = self.get_bucket_index(&key);
 
-        // Initialize the TicketLock if it's not already initialized.
+        // Initialize the SpinLock if it's not already initialized.
         if self.buckets[index].is_none() {
             self.buckets[index] = Some(Mutex::new(
-                Entry { key, value },
+                Entry { key: 0, value: 0 },
                 "concurrent_hash_map_spin_lock",
             ));
         }
         // Call the lock method to acquire the lock.
         let spin_lock = self.buckets[index].as_ref().unwrap();
         let mut _guard = spin_lock.lock();
+        _guard.key = key;
+        _guard.value = value;
+
         self.size
             .fetch_add(1, core::sync::atomic::Ordering::Acquire);
         // self.size += 1;
@@ -77,7 +80,7 @@ where
     }
 
     // Retrieve a value associated with the given key from the hash map.
-    pub fn get(&self, key: &K) -> Option<&V> {
+    pub fn get(&self, key: &i32) -> Option<&i32> {
         let index = self.get_bucket_index(key);
 
         if let Some(spin_lock) = &self.buckets[index] {
