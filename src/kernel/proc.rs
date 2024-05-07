@@ -63,9 +63,9 @@ impl Cpus {
     // # Safety
     // interrupts must be disabled.
     #[allow(clippy::mut_from_ref)]
-    pub unsafe fn mycpu(&self) -> *mut Cpu {
+    pub unsafe fn mycpu(&self) -> &mut Cpu {
         let id = Self::cpu_id();
-        self.0[id].get()
+        &mut *self.0[id].get()
     }
 
     // Return the current proc pointer: Some(Arc<Proc>), or None if none.
@@ -73,7 +73,7 @@ impl Cpus {
         let _intr_lock = Self::lock_mycpu("withoutspin");
         let c;
         unsafe {
-            c = &*CPUS.mycpu();
+            c = CPUS.mycpu();
         }
         c.proc.clone()
     }
@@ -84,7 +84,7 @@ impl Cpus {
     pub fn lock_mycpu(name: &str) -> IntrLock {
         let old = intr_get();
         intr_off();
-        unsafe { (*CPUS.mycpu()).locked(old, name) }
+        unsafe { CPUS.mycpu().locked(old, name) }
     }
 }
 
@@ -103,11 +103,14 @@ impl Cpu {
 
     // if all `IntrLock`'s are dropped, interrupts may recover
     // to previous state.
-    fn locked(&mut self, old: bool, _name: &str) -> IntrLock {
+    // # Safety:
+    // interrupts must be disabled
+    unsafe fn locked(&mut self, old: bool, name: &str) -> IntrLock {
         if self.noff == 0 {
             self.intena = old;
         }
         self.noff += 1;
+        self.nest[(self.noff - 1) as usize] = &*(name as *const _);
         IntrLock
     }
 
@@ -129,7 +132,7 @@ pub struct IntrLock;
 
 impl Drop for IntrLock {
     fn drop(&mut self) {
-        unsafe { (&mut *CPUS.mycpu()).unlock() }
+        unsafe { CPUS.mycpu().unlock() }
     }
 }
 
@@ -665,6 +668,7 @@ pub fn scheduler() -> ! {
         // Avoid deadlock by ensuring thet devices can interrupt.
         intr_on();
 
+        let mut found : bool = false;
         for p in PROCS.pool.iter() {
             let mut inner = p.inner.lock();
             if inner.state == ProcState::RUNNABLE {
@@ -672,13 +676,23 @@ pub fn scheduler() -> ! {
                 // to release its lock and then reacquire it
                 // before jumping back to us.
                 inner.state = ProcState::RUNNING;
+                c.proc.replace(Arc::clone(p));
                 unsafe {
-                    (*c).proc.replace(Arc::clone(p));
-                    swtch(&mut (*c).context, &p.data().context);
-                    // Process is done running for now.
-                    // It should have changed its p->state before coming back.
-                    (*c).proc.take();
+                    swtch(&mut c.context, &p.data().context);
                 }
+                // Process is done running for now.
+                // It should have changed its p->state before coming back.
+                c.proc.take();
+                found = true;
+            }
+        }
+         if found == false {
+            intr_on();
+            // If pool cycle ran without a process running... 
+            // ...park cpu until interrupt
+            // This prevents cpu from red-lining for no reason
+            unsafe {
+                asm!("wfi");
             }
         }
     }
@@ -690,7 +704,7 @@ pub fn scheduler() -> ! {
 // kernel thread, not this CPU.
 fn sched<'a>(guard: MutexGuard<'a, ProcInner>, ctx: &mut Context) -> MutexGuard<'a, ProcInner> {
     unsafe {
-        let c = &mut *CPUS.mycpu();
+        let c = CPUS.mycpu();
         assert!(guard.holding(), "sched proc lock");
         assert!(
             c.noff == 1,

@@ -55,7 +55,7 @@ pub const fn PLIC_SCLAIM(hart: usize) -> usize {
 // for use by the kernel and user psges
 // from physical address 0x80000000 to PHYSTOP.
 pub const KERNBASE: usize = 0x8000_0000;
-pub const PHYSTOP: usize = KERNBASE + 512 * 1024 * 1024;
+pub const PHYSTOP: usize = KERNBASE + 8192 * 1024 * 1024;
 
 // map the trampoline page to the highest address,
 // in both user and kernel space.

@@ -74,6 +74,14 @@ path = "bin/clear.rs"
 name = "_sleep"
 path = "bin/sleep.rs"
 
+[[bin]]
+name = "_lockbench"
+path = "bin/lockbench.rs"
+
+[[bin]]
+name = "_accessbench"
+path = "bin/accessbench.rs"
+
 [dependencies]
 libkernel = { workspace = true }
 
