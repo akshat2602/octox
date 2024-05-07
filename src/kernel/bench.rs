@@ -33,8 +33,8 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
     );
 
     // Time taken is in ticks, to convert it to seconds, divide by the frequency of the timer
-    // Frequency of the timer is 10000000 Hz as found in https://github.com/qemu/qemu/blob/master/hw/riscv/virt.c
-    let frequency = 10000000;
+    // Frequency of the timer is 15000000 Hz as found in https://github.com/qemu/qemu/blob/master/hw/riscv/virt.c
+    let frequency = 15000000;
     let elapsed_time = (end - start) as f64 / frequency as f64;
     println!("Elapsed time for the benchmark: {} seconds", elapsed_time);
 }
@@ -57,17 +57,17 @@ fn bench_ticket(contention: i32, proc_num: i32) -> (i32, f32) {
         } else if contention == 2 {
             unsafe {
                 // Lowest contention
-                CONCURRENTHASHMAP.insert(proc_num % 5, i * 2);
+                CONCURRENTHASHMAP.insert(proc_num % 7, i * 2);
                 CONCURRENTHASHMAP
-                    .get(&(proc_num % 5))
+                    .get(&(proc_num % 7))
                     .unwrap_or_else(|| &0);
             }
         } else if contention == 3 {
             unsafe {
                 // No contention
-                CONCURRENTHASHMAP.insert(proc_num % 10, i * 2);
+                CONCURRENTHASHMAP.insert(proc_num % 15, i * 2);
                 CONCURRENTHASHMAP
-                    .get(&(proc_num % 10))
+                    .get(&(proc_num % 15))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -95,16 +95,16 @@ fn bench_spin(contention: i32, proc_num: i32) -> (i32, f32) {
         } else if contention == 2 {
             unsafe {
                 // Lowest contention
-                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 5, i * 2);
+                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 7, i * 2);
                 CONCURRENTHASHMAPSPINLOCK
-                    .get(&(proc_num % 5))
+                    .get(&(proc_num % 7))
                     .unwrap_or_else(|| &0);
             }
         } else if contention == 3 {
             unsafe {
-                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 10, i * 2);
+                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 15, i * 2);
                 CONCURRENTHASHMAPSPINLOCK
-                    .get(&(proc_num % 10))
+                    .get(&(proc_num % 15))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -139,9 +139,9 @@ fn bench_spin_faa(contention: i32, proc_num: i32) -> (i32, f32) {
             }
         } else if contention == 3 {
             unsafe {
-                CONCURRENTHASHMAPSPINLOCKFAA.insert(proc_num % 10, i * 2);
+                CONCURRENTHASHMAPSPINLOCKFAA.insert(proc_num % 15, i * 2);
                 CONCURRENTHASHMAPSPINLOCKFAA
-                    .get(&(proc_num % 10))
+                    .get(&(proc_num % 15))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -176,9 +176,9 @@ fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, f32) {
             }
         } else if contention == 3 {
             unsafe {
-                CONCURRENTHASHMAPSPINLOCKTAS.insert(proc_num % 10, i * 2);
+                CONCURRENTHASHMAPSPINLOCKTAS.insert(proc_num % 15, i * 2);
                 CONCURRENTHASHMAPSPINLOCKTAS
-                    .get(&(proc_num % 10))
+                    .get(&(proc_num % 15))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -194,7 +194,7 @@ fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, f32) {
 }
 
 
-fn bench_sleep(contention: i32, proc_num: i32) -> (i32, i32) {
+fn bench_sleep(contention: i32, proc_num: i32) -> (i32, f32) {
     let mut avg_time: i32 = 0;
     // Insert and get values concurrently
     for i in 0..4000000 {
@@ -207,16 +207,16 @@ fn bench_sleep(contention: i32, proc_num: i32) -> (i32, i32) {
         } else if contention == 2 {
             unsafe {
                 // Lowest contention
-                CONCURRENTHASHMAPSLEEPLOCK.insert(proc_num % 12, i * 2);
+                CONCURRENTHASHMAPSLEEPLOCK.insert(proc_num % 5, i * 2);
                 CONCURRENTHASHMAPSLEEPLOCK
-                    .get(&(proc_num % 12))
+                    .get(&(proc_num % 5))
                     .unwrap_or_else(|| &0);
             }
         } else if contention == 3 {
             unsafe {
-                CONCURRENTHASHMAPSLEEPLOCK.insert(proc_num % 25, i * 2);
+                CONCURRENTHASHMAPSLEEPLOCK.insert(proc_num % 15, i * 2);
                 CONCURRENTHASHMAPSLEEPLOCK
-                    .get(&(proc_num % 25))
+                    .get(&(proc_num % 15))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -227,6 +227,6 @@ fn bench_sleep(contention: i32, proc_num: i32) -> (i32, i32) {
     }
     return (
         unsafe { CONCURRENTHASHMAPSLEEPLOCK.size() as i32 },
-        avg_time / 4000000,
+        (avg_time as f32)/(4000000 as f32),
     );
 }
