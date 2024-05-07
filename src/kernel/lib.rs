@@ -54,6 +54,8 @@ pub mod ssht_spinlock_faa;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod ssht_spinlock_tas;
 #[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ssht_sleep;
+#[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod start;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod ticketlock;

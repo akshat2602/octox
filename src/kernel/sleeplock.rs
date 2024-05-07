@@ -64,6 +64,11 @@ impl<T> SleepLock<T> {
     pub fn unlock(guard: SleepLockGuard<'_, T>) -> &'_ SleepLock<T> {
         guard.sleep_lock()
     }
+
+    #[allow(clippy::mut_from_ref)]
+    pub unsafe fn get_mut(&self) -> &mut T {
+        &mut *self.data.get()
+    }
 }
 
 impl<'a, T: 'a> SleepLockGuard<'a, T> {

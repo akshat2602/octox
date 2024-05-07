@@ -5,6 +5,7 @@ use crate::ssht_spinlock::CONCURRENTHASHMAPSPINLOCK;
 use crate::ssht_spinlock_faa::CONCURRENTHASHMAPSPINLOCKFAA;
 use crate::ssht_spinlock_tas::CONCURRENTHASHMAPSPINLOCKTAS;
 use crate::ssht_ticket::CONCURRENTHASHMAP;
+use crate::ssht_sleep::CONCURRENTHASHMAPSLEEPLOCK;
 use crate::trap::TICKS;
 
 pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
@@ -16,6 +17,7 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
         2 => bench_spin(contention, pno),
         3 => bench_spin_faa(contention, pno),
         4 => bench_spin_tas(contention, pno),
+        5 => bench_sleep(contention, pno),
         _ => default_value(),
     };
 
@@ -187,6 +189,44 @@ fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, i32) {
     }
     return (
         unsafe { CONCURRENTHASHMAPSPINLOCKTAS.size() as i32 },
+        avg_time / 4000000,
+    );
+}
+
+
+fn bench_sleep(contention: i32, proc_num: i32) -> (i32, i32) {
+    let mut avg_time: i32 = 0;
+    // Insert and get values concurrently
+    for i in 0..4000000 {
+        let start = *TICKS.lock();
+        if contention == 1 {
+            unsafe {
+                CONCURRENTHASHMAPSLEEPLOCK.insert(i, i * 2);
+                CONCURRENTHASHMAPSLEEPLOCK.get(&i).unwrap_or_else(|| &0);
+            }
+        } else if contention == 2 {
+            unsafe {
+                // Lowest contention
+                CONCURRENTHASHMAPSLEEPLOCK.insert(proc_num % 12, i * 2);
+                CONCURRENTHASHMAPSLEEPLOCK
+                    .get(&(proc_num % 12))
+                    .unwrap_or_else(|| &0);
+            }
+        } else if contention == 3 {
+            unsafe {
+                CONCURRENTHASHMAPSLEEPLOCK.insert(proc_num % 25, i * 2);
+                CONCURRENTHASHMAPSLEEPLOCK
+                    .get(&(proc_num % 25))
+                    .unwrap_or_else(|| &0);
+            }
+        }
+        // Optionally check or use the retrieved value
+        let end = *TICKS.lock();
+        // thread_time.push(end - start);
+        avg_time += (end - start) as i32;
+    }
+    return (
+        unsafe { CONCURRENTHASHMAPSLEEPLOCK.size() as i32 },
         avg_time / 4000000,
     );
 }

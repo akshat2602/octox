@@ -16,6 +16,7 @@ use crate::{
     println,
     proc::*,
     riscv::PGSIZE,
+    ssht_sleep::CONCURRENTHASHMAPSLEEPLOCK,
     ssht_spinlock::CONCURRENTHASHMAPSPINLOCK,
     ssht_spinlock_faa::CONCURRENTHASHMAPSPINLOCKFAA,
     ssht_spinlock_tas::CONCURRENTHASHMAPSPINLOCKTAS,
@@ -295,6 +296,7 @@ impl SysCalls {
                 CONCURRENTHASHMAPSPINLOCK.init(25);
                 CONCURRENTHASHMAPSPINLOCKFAA.init(25);
                 CONCURRENTHASHMAPSPINLOCKTAS.init(25);
+                CONCURRENTHASHMAPSLEEPLOCK.init(25);
                 // CONCURRENTHASHMAP.insert(argno, argno*2);
                 println!("ConcurrentHashMap inserted");
             }
