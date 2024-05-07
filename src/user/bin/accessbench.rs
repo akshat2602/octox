@@ -4,7 +4,7 @@ use alloc::{string::{String, ToString}, vec::Vec,vec};
 use ulib::{env, print, println, process::{Child, Command}, sys};
 extern crate alloc;
 
-static NUM_PROCESSES: i32 = 25;
+static NUM_PROCESSES: i32 = 10;
 
 fn main() {
     // let _ = accessbench().unwrap();

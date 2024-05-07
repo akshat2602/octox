@@ -39,11 +39,11 @@ pub fn bench_start(pno: i32, bench_strategy: i32, contention: i32) {
     println!("Elapsed time for the benchmark: {} seconds", elapsed_time);
 }
 
-fn default_value() -> (i32, i32) {
-    (-1, -1)
+fn default_value() -> (i32, f32) {
+    (-1, -1 as f32)
 }
 
-fn bench_ticket(contention: i32, proc_num: i32) -> (i32, i32) {
+fn bench_ticket(contention: i32, proc_num: i32) -> (i32, f32) {
     // Insert and get values concurrently
     let mut avg_time: i32 = 0;
     for i in 0..4000000 {
@@ -57,17 +57,17 @@ fn bench_ticket(contention: i32, proc_num: i32) -> (i32, i32) {
         } else if contention == 2 {
             unsafe {
                 // Lowest contention
-                CONCURRENTHASHMAP.insert(proc_num % 12, i * 2);
+                CONCURRENTHASHMAP.insert(proc_num % 5, i * 2);
                 CONCURRENTHASHMAP
-                    .get(&(proc_num % 12))
+                    .get(&(proc_num % 5))
                     .unwrap_or_else(|| &0);
             }
         } else if contention == 3 {
             unsafe {
                 // No contention
-                CONCURRENTHASHMAP.insert(proc_num % 25, i * 2);
+                CONCURRENTHASHMAP.insert(proc_num % 10, i * 2);
                 CONCURRENTHASHMAP
-                    .get(&(proc_num % 25))
+                    .get(&(proc_num % 10))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -78,11 +78,11 @@ fn bench_ticket(contention: i32, proc_num: i32) -> (i32, i32) {
     }
     return (
         unsafe { CONCURRENTHASHMAP.size() as i32 },
-        avg_time / 4000000,
+        (avg_time as f32)/(4000000 as f32),
     );
 }
 
-fn bench_spin(contention: i32, proc_num: i32) -> (i32, i32) {
+fn bench_spin(contention: i32, proc_num: i32) -> (i32, f32) {
     // Insert and get values concurrently
     let mut avg_time: i32 = 0;
     for i in 0..4000000 {
@@ -95,16 +95,16 @@ fn bench_spin(contention: i32, proc_num: i32) -> (i32, i32) {
         } else if contention == 2 {
             unsafe {
                 // Lowest contention
-                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 12, i * 2);
+                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 5, i * 2);
                 CONCURRENTHASHMAPSPINLOCK
-                    .get(&(proc_num % 12))
+                    .get(&(proc_num % 5))
                     .unwrap_or_else(|| &0);
             }
         } else if contention == 3 {
             unsafe {
-                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 25, i * 2);
+                CONCURRENTHASHMAPSPINLOCK.insert(proc_num % 10, i * 2);
                 CONCURRENTHASHMAPSPINLOCK
-                    .get(&(proc_num % 25))
+                    .get(&(proc_num % 10))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -115,11 +115,11 @@ fn bench_spin(contention: i32, proc_num: i32) -> (i32, i32) {
     }
     return (
         unsafe { CONCURRENTHASHMAPSPINLOCK.size() as i32 },
-        avg_time / 4000000,
+        (avg_time as f32)/(4000000 as f32),
     );
 }
 
-fn bench_spin_faa(contention: i32, proc_num: i32) -> (i32, i32) {
+fn bench_spin_faa(contention: i32, proc_num: i32) -> (i32, f32) {
     // Insert and get values concurrently
     let mut avg_time: i32 = 0;
     for i in 0..4000000 {
@@ -132,16 +132,16 @@ fn bench_spin_faa(contention: i32, proc_num: i32) -> (i32, i32) {
         } else if contention == 2 {
             unsafe {
                 // Lowest contention
-                CONCURRENTHASHMAPSPINLOCKFAA.insert(proc_num % 12, i * 2);
+                CONCURRENTHASHMAPSPINLOCKFAA.insert(proc_num % 5, i * 2);
                 CONCURRENTHASHMAPSPINLOCKFAA
-                    .get(&(proc_num % 12))
+                    .get(&(proc_num % 5))
                     .unwrap_or_else(|| &0);
             }
         } else if contention == 3 {
             unsafe {
-                CONCURRENTHASHMAPSPINLOCKFAA.insert(proc_num % 25, i * 2);
+                CONCURRENTHASHMAPSPINLOCKFAA.insert(proc_num % 10, i * 2);
                 CONCURRENTHASHMAPSPINLOCKFAA
-                    .get(&(proc_num % 25))
+                    .get(&(proc_num % 10))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -152,11 +152,11 @@ fn bench_spin_faa(contention: i32, proc_num: i32) -> (i32, i32) {
     }
     return (
         unsafe { CONCURRENTHASHMAPSPINLOCKFAA.size() as i32 },
-        avg_time / 4000000,
+        (avg_time as f32)/(4000000 as f32),
     );
 }
 
-fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, i32) {
+fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, f32) {
     let mut avg_time: i32 = 0;
     // Insert and get values concurrently
     for i in 0..4000000 {
@@ -169,16 +169,16 @@ fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, i32) {
         } else if contention == 2 {
             unsafe {
                 // Lowest contention
-                CONCURRENTHASHMAPSPINLOCKTAS.insert(proc_num % 12, i * 2);
+                CONCURRENTHASHMAPSPINLOCKTAS.insert(proc_num % 5, i * 2);
                 CONCURRENTHASHMAPSPINLOCKTAS
-                    .get(&(proc_num % 12))
+                    .get(&(proc_num % 5))
                     .unwrap_or_else(|| &0);
             }
         } else if contention == 3 {
             unsafe {
-                CONCURRENTHASHMAPSPINLOCKTAS.insert(proc_num % 25, i * 2);
+                CONCURRENTHASHMAPSPINLOCKTAS.insert(proc_num % 10, i * 2);
                 CONCURRENTHASHMAPSPINLOCKTAS
-                    .get(&(proc_num % 25))
+                    .get(&(proc_num % 10))
                     .unwrap_or_else(|| &0);
             }
         }
@@ -189,7 +189,7 @@ fn bench_spin_tas(contention: i32, proc_num: i32) -> (i32, i32) {
     }
     return (
         unsafe { CONCURRENTHASHMAPSPINLOCKTAS.size() as i32 },
-        avg_time / 4000000,
+        (avg_time as f32)/(4000000 as f32),
     );
 }
 

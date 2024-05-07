@@ -50,8 +50,8 @@ where
 
     // Helper function to get the bucket index based on the hash of the key.
     fn get_bucket_index(&self, key: &i32) -> usize {
-        let hash = self.hash(key);
-        hash % self.buckets.len()
+        // let hash = self.hash(key);
+        (*key as usize) % self.buckets.len()
     }
 
     // Insert a key-value pair into the hash map.

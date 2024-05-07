@@ -292,11 +292,10 @@ impl SysCalls {
         #[cfg(all(target_os = "none", feature = "kernel"))]
         {
             unsafe {
-                CONCURRENTHASHMAP.init(25);
-                CONCURRENTHASHMAPSPINLOCK.init(25);
-                CONCURRENTHASHMAPSPINLOCKFAA.init(25);
-                CONCURRENTHASHMAPSPINLOCKTAS.init(25);
-                CONCURRENTHASHMAPSLEEPLOCK.init(25);
+                CONCURRENTHASHMAP.init(10);
+                CONCURRENTHASHMAPSPINLOCK.init(10);
+                CONCURRENTHASHMAPSPINLOCKFAA.init(10);
+                CONCURRENTHASHMAPSPINLOCKTAS.init(10);
                 // CONCURRENTHASHMAP.insert(argno, argno*2);
                 println!("ConcurrentHashMap inserted");
             }
