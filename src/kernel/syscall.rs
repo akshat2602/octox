@@ -4,6 +4,7 @@ use crate::error::Result;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 use crate::{
     array,
+    bench::bench_start,
     defs::AsBytes,
     exec::exec,
     fcntl::{FcntlCmd, OMode},
@@ -12,8 +13,14 @@ use crate::{
     log::LOG,
     param::{MAXARG, MAXPATH},
     pipe::Pipe,
+    println,
     proc::*,
     riscv::PGSIZE,
+    ssht_sleep::CONCURRENTHASHMAPSLEEPLOCK,
+    ssht_spinlock::CONCURRENTHASHMAPSPINLOCK,
+    ssht_spinlock_faa::CONCURRENTHASHMAPSPINLOCKFAA,
+    ssht_spinlock_tas::CONCURRENTHASHMAPSPINLOCKTAS,
+    ssht_ticket::CONCURRENTHASHMAP,
     stat::FileType,
     trap::TICKS,
     vm::{Addr, UVAddr},
@@ -52,6 +59,8 @@ pub enum SysCalls {
     Close = 21,
     Dup2 = 22,
     Fcntl = 23,
+    CreateBench = 24,
+    AccessBench = 25,
     Invalid = 0,
 }
 
@@ -102,6 +111,11 @@ impl SysCalls {
         (Fn::U(Self::close), "(fd: usize)"),               // Release open file fd.
         (Fn::I(Self::dup2), "(src: usize, dst: usize)"),   //
         (Fn::I(Self::fcntl), "(fd: usize, cmd: FcntlCmd)"), //
+        (Fn::I(Self::createbench), "(entry: i32)"),
+        (
+            Fn::I(Self::accessbench),
+            "(pno: i32, bench_strategy: i32, contention: i32)",
+        ),
     ];
     pub fn invalid() -> ! {
         unimplemented!()
@@ -268,6 +282,43 @@ fn fdalloc(file: File) -> Result<usize> {
         }
     }
     Err(FileDescriptorTooLarge)
+}
+
+impl SysCalls {
+    // TODO: Kernel benchmarking system calls
+    pub fn createbench() -> Result<usize> {
+        #[cfg(not(all(target_os = "none", feature = "kernel")))]
+        return Ok(0);
+        #[cfg(all(target_os = "none", feature = "kernel"))]
+        {
+            unsafe {
+                CONCURRENTHASHMAP.init(15);
+                CONCURRENTHASHMAPSPINLOCK.init(15);
+                CONCURRENTHASHMAPSPINLOCKFAA.init(15);
+                CONCURRENTHASHMAPSPINLOCKTAS.init(15);
+                // CONCURRENTHASHMAP.insert(argno, argno*2);
+                println!("ConcurrentHashMap inserted");
+            }
+            Ok(0)
+        }
+    }
+
+    pub fn accessbench() -> Result<usize> {
+        #[cfg(not(all(target_os = "none", feature = "kernel")))]
+        return Ok(0);
+        #[cfg(all(target_os = "none", feature = "kernel"))]
+        {
+            let pno: i32 = argraw(0) as i32;
+            let bench_strategy: i32 = argraw(1) as i32;
+            let contention: i32 = argraw(2) as i32;
+            if pno != -1 {
+                bench_start(pno, bench_strategy, contention);
+            } else {
+                unsafe { println!("Final size: {}", CONCURRENTHASHMAP.size()) }
+            }
+            Ok(0)
+        }
+    }
 }
 
 // Process related system calls
@@ -654,6 +705,8 @@ impl SysCalls {
             21 => Self::Close,
             22 => Self::Dup2,
             23 => Self::Fcntl,
+            24 => Self::CreateBench,
+            25 => Self::AccessBench,
             _ => Self::Invalid,
         }
     }

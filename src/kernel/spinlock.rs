@@ -64,7 +64,7 @@ impl<T> Mutex<T> {
     }
 
     pub fn unlock(guard: MutexGuard<'_, T>) -> &'_ Mutex<T> {
-        guard.mutex()
+        guard.lock()
     }
 
     #[allow(clippy::mut_from_ref)]
@@ -85,7 +85,7 @@ unsafe impl<T: Send> Sync for Mutex<T> {}
 
 impl<'a, T: 'a> MutexGuard<'a, T> {
     // Returns a reference to the original 'Mutex' object.
-    pub fn mutex(&self) -> &'a Mutex<T> {
+    pub fn lock(&self) -> &'a Mutex<T> {
         self.mutex
     }
 

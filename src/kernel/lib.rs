@@ -6,7 +6,7 @@
 #![cfg_attr(all(target_os = "none", feature = "kernel"), feature(new_uninit))]
 #![cfg_attr(all(target_os = "none", feature = "kernel"), feature(allocator_api))]
 #![feature(negative_impls)]
-#![feature(associated_type_bounds)]
+// #![feature(associated_type_bounds)]
 #![feature(naked_functions)]
 #![feature(asm_const)]
 #![feature(fn_align)]
@@ -16,6 +16,8 @@
 #[cfg(all(target_os = "none", feature = "kernel"))]
 extern crate alloc;
 
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod bench;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod condvar;
 #[cfg(all(target_os = "none", feature = "kernel"))]
@@ -40,7 +42,23 @@ pub mod sleeplock;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod spinlock;
 #[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod spinlock_faa;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod spinlock_tas;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ssht_ticket;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ssht_spinlock;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ssht_spinlock_faa;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ssht_spinlock_tas;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ssht_sleep;
+#[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod start;
+#[cfg(all(target_os = "none", feature = "kernel"))]
+pub mod ticketlock;
 #[cfg(all(target_os = "none", feature = "kernel"))]
 pub mod uart;
 #[cfg(all(target_os = "none", feature = "kernel"))]

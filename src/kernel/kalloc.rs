@@ -2,7 +2,8 @@
 
 use crate::buddy::BuddyAllocator;
 use crate::memlayout::PHYSTOP;
-use crate::spinlock::Mutex;
+// use crate::spinlock::Mutex;
+use crate::ticketlock::TicketLock;
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr;
 
@@ -13,14 +14,14 @@ extern "C" {
 }
 
 #[global_allocator]
-pub static KMEM: Kmem = Kmem(Mutex::new(BuddyAllocator::new(), "kmem"));
+pub static KMEM: Kmem = Kmem(TicketLock::new(BuddyAllocator::new(), "kmem"));
 
 #[alloc_error_handler]
 fn on_oom(layout: Layout) -> ! {
     panic!("alloc error: {:?}", layout)
 }
 
-pub struct Kmem(Mutex<BuddyAllocator>);
+pub struct Kmem(TicketLock<BuddyAllocator>);
 
 unsafe impl GlobalAlloc for Kmem {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {

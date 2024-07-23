@@ -1,0 +1,8 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "src/kernel/Cargo.toml",
+        "src/mkfs/Cargo.toml",
+        "src/user/Cargo.toml"
+    ],
+    "rust-analyzer.cargo.sysroot": "discover",
+}
